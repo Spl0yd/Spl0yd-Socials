@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spl0yd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#05030f; --text:#ece9ff; --muted:#a39fc7;
+  --violet:#7c5cff; --cyan:#4de2ff; --pink:#ff6bd6;
+  --glass:rgba(255,255,255,.06); --line:rgba(255,255,255,.16);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden}
+#galaxy{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+main{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:20px;text-align:center}
+
+h1{margin:0;font-weight:800;font-size:clamp(3.2rem,15vw,9rem);letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(110deg,#fff 15%,var(--cyan) 50%,var(--pink) 85%);background-size:200% auto;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 28px rgba(124,92,255,.55));
+  animation:shine 8s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+
+.links{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:8px;border:1px solid var(--line);border-radius:999px;
+  background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);max-width:100%}
+.links a{display:flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-size:.92rem;font-weight:600;
+  padding:10px 18px;border-radius:999px;transition:color .2s,background .2s}
+.links a:hover,.links a:focus-visible{color:#fff;background:rgba(255,255,255,.12);outline:none}
+.links a:focus-visible{box-shadow:0 0 0 2px var(--cyan)}
+.links svg{width:18px;height:18px;fill:currentColor;flex:none}
+
+/* Musik-Player */
+.player{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2;
+  display:flex;align-items:center;gap:4px;padding:6px 16px 6px 6px;border:1px solid var(--line);border-radius:999px;
+  background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.pbtn{width:38px;height:38px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;
+  display:grid;place-items:center;transition:color .2s,background .2s;padding:0}
+.pbtn:hover,.pbtn:focus-visible{color:#fff;background:rgba(255,255,255,.12);outline:none}
+.pbtn:focus-visible{box-shadow:0 0 0 2px var(--cyan)}
+.pbtn svg{width:20px;height:20px;fill:currentColor}
+#play{background:linear-gradient(120deg,var(--violet),var(--pink));color:#fff;margin-right:4px}
+#play:hover,#play:focus-visible{background:linear-gradient(120deg,var(--violet),var(--pink));filter:brightness(1.15)}
+#vol{-webkit-appearance:none;appearance:none;width:110px;height:4px;margin:0 0 0 4px;border-radius:99px;cursor:pointer;
+  background:linear-gradient(to right,var(--cyan) var(--v,40%),rgba(255,255,255,.18) var(--v,40%))}
+#vol::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 12px rgba(124,92,255,.8)}
+#vol::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 12px rgba(124,92,255,.8)}
+#vol:focus-visible{outline:2px solid var(--cyan);outline-offset:6px}
+@media (max-width:420px){#vol{width:80px}}
+
+@media (prefers-reduced-motion:reduce){h1{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="galaxy" aria-hidden="true"></canvas>
+
+<main>
+  <h1>Spl0yd</h1>
+
+  <!-- SOCIAL LINKS: -->
+
+  <nav class="links" aria-label="Social Links">
+    <a href="https://guns.lol/spl0yd" target="_blank" rel="noopener noreferrer">Guns.lol</a>
+    <a href="https://fbi.watch/spl0yd" target="_blank" rel="noopener noreferrer">Drift.rip</a>
+
+  </nav>
+</main>
+
+<!-- MUSIK-PLAYER: Play/Pause, Stumm, Lautstärke-Regler -->
+<div class="player" role="group" aria-label="Hintergrundmusik">
+  <button class="pbtn" id="play" type="button" aria-label="Musik abspielen" title="Musik abspielen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path id="playIcon" d="M8 5v14l11-7z"/></svg>
+  </button>
+  <button class="pbtn" id="mute" type="button" aria-label="Stumm schalten" title="Stumm schalten">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 9v6h4l5 5V4L7 9H3z"/>
+      <path id="waves" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path id="cross" d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"/>
+    </svg>
+  </button>
+  <input id="vol" type="range" min="0" max="100" value="40" aria-label="Lautstärke">
+</div>
+<audio id="bgm" loop preload="none"></audio>
+
+
+<script>
+// ---- Animierter Tab-Titel ----
+(function(){
+  var name='Spl0yd',i=0,dir=1,wait=0;
+  function tick(){
+    if(wait>0){wait--;return}
+    i+=dir;
+    if(i>=name.length){dir=-1;wait=10}
+    else if(i<=0){dir=1;wait=4;i=0}
+    document.title=(i>0?name.slice(0,i):'\u200B')+'_';
+  }
+  setInterval(tick,220);
+})();
+
+// ---- Hintergrundmusik mit Play/Pause, Stumm und Lautstärke ----
+(function(){
+  // >>> HIER DEINE MUSIK EINTRAGEN, z. B. 'musik.mp3' (Datei liegt neben dieser HTML-Datei).
+  // Leer lassen = es läuft ein sanfter, generierter Weltraum-Sound als Platzhalter.
+  var MUSIC_URL='music.mp3';
+
+  var audio=document.getElementById('bgm'),play=document.getElementById('play'),
+      mute=document.getElementById('mute'),vol=document.getElementById('vol'),
+      playIcon=document.getElementById('playIcon'),waves=document.getElementById('waves'),cross=document.getElementById('cross');
+  var PLAY='M8 5v14l11-7z',PAUSE='M6 5h4v14H6zm8 0h4v14h-4z';
+  var playing=false,muted=false,actx=null,master=null,analyser=null,data=null,routed=false,kickTimer=null;
+  var galaxy=document.getElementById('galaxy');
+
+  // Shake-Stärke: 0 = aus, 1 = normal, 2 = stark
+  var SHAKE=1;
+
+  // Bass-Analyse geht nur, wenn die Musikdatei von derselben Adresse kommt (http/https, kein file://, kein fremder Server).
+  // Sonst würde der Browser den Ton blockieren. In dem Fall spielt die Musik normal, nur ohne Shake.
+  var CAN_ANALYSE=(function(){
+    if(!MUSIC_URL)return true;
+    try{return location.protocol!=='file:'&&new URL(MUSIC_URL,location.href).origin===location.origin}catch(e){return false}
+  })();
+
+  try{var sv=localStorage.getItem('spl0yd-vol');if(sv!==null&&!isNaN(+sv))vol.value=Math.min(100,Math.max(0,+sv))}catch(e){}
+  if(MUSIC_URL)audio.src=MUSIC_URL;
+
+  function level(){return muted?0:vol.value/100}
+
+  function apply(){
+    var l=level(),off=muted||+vol.value===0;
+    if(master)master.gain.setTargetAtTime(l*(MUSIC_URL?1:.5),actx.currentTime,.05);
+    else if(MUSIC_URL)audio.volume=l;
+    vol.style.setProperty('--v',vol.value+'%');
+    waves.style.display=off?'none':'';
+    cross.style.display=off?'':'none';
+    mute.setAttribute('aria-label',muted?'Ton an':'Stumm schalten');
+    mute.title=muted?'Ton an':'Stumm schalten';
+    playIcon.setAttribute('d',playing?PAUSE:PLAY);
+    play.setAttribute('aria-label',playing?'Musik pausieren':'Musik abspielen');
+    play.title=playing?'Musik pausieren':'Musik abspielen';
+  }
+
+  // Audio-Graph: Quelle → Analyser (misst den Bass) → Lautstärke → Ausgang
+  function initAudio(){
+    if(actx)return;
+    actx=new (window.AudioContext||window.webkitAudioContext)();
+    analyser=actx.createAnalyser();analyser.fftSize=1024;analyser.smoothingTimeConstant=.6;
+    data=new Uint8Array(analyser.frequencyBinCount);
+    master=actx.createGain();master.gain.value=level()*(MUSIC_URL?1:.5);
+    analyser.connect(master);master.connect(actx.destination);
+  }
+
+  // Platzhalter-Sound: ruhiger Akkord mit sanftem Bass-Puls (damit man den Shake auch ohne eigene Musik sieht)
+  function startSynth(){
+    if(!kickTimer){
+      initAudio();
+      var lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;lp.connect(analyser);
+      [110,164.81,220,277.18,329.63].forEach(function(f,i){
+        var o=actx.createOscillator(),g=actx.createGain(),lfo=actx.createOscillator(),lg=actx.createGain();
+        o.type=i%2?'triangle':'sine';o.frequency.value=f;o.detune.value=(i-2)*4;g.gain.value=.12;
+        lfo.frequency.value=.05+i*.03;lg.gain.value=.08;
+        lfo.connect(lg);lg.connect(g.gain);o.connect(g);g.connect(lp);o.start();lfo.start();
+      });
+      kickTimer=setInterval(function(){
+        if(!playing||actx.state!=='running')return;
+        var t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();
+        o.type='sine';o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(42,t+.18);
+        g.gain.setValueAtTime(.7,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);
+        o.connect(g);g.connect(lp);o.start(t);o.stop(t+.4);
+      },650);
+    }
+    actx.resume();
+  }
+
+  play.addEventListener('click',function(){
+    if(!playing){
+      playing=true;
+      if(MUSIC_URL){
+        if(CAN_ANALYSE&&!routed){
+          initAudio();
+          actx.createMediaElementSource(audio).connect(analyser);
+          routed=true;audio.volume=1;
+        }
+        if(actx)actx.resume();else audio.volume=level();
+        var p=audio.play();
+        if(p&&p.catch)p.catch(function(){playing=false;play.title='Musikdatei konnte nicht geladen werden';apply()});
+      }else startSynth();
+    }else{
+      playing=false;
+      if(MUSIC_URL)audio.pause();else if(actx)actx.suspend();
+    }
+    apply();
+  });
+
+  mute.addEventListener('click',function(){
+    muted=!muted;
+    if(!muted&&+vol.value===0)vol.value=40;
+    apply();
+  });
+
+  vol.addEventListener('input',function(){
+    muted=false;apply();
+    try{localStorage.setItem('spl0yd-vol',vol.value)}catch(e){}
+  });
+
+  // ---- Shake: der Galaxie-Hintergrund zuckt im Takt des Basses ----
+  var avg=0,env=0,reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(SHAKE>0&&!reduceMotion){
+    galaxy.style.willChange='transform';
+    (function shake(){
+      if(analyser&&playing&&!muted&&+vol.value>0){
+        analyser.getByteFrequencyData(data);
+        var s=0;for(var i=1;i<=4;i++)s+=data[i];        // ca. 45–235 Hz = Bass
+        var bass=s/4/255;                                // 0..1
+        avg+=(bass-avg)*.02;                             // langsamer Durchschnitt
+        var punch=Math.max(0,bass-avg-.04)*4;            // nur Schläge deutlich über dem Durchschnitt
+        env=Math.max(punch,env*.86);                     // schnell hoch, sanft abklingen
+      }else env*=.8;
+      var k=Math.min(env,1)*SHAKE;
+      if(k>.01)galaxy.style.transform='translate3d('+((Math.random()-.5)*28*k).toFixed(1)+'px,'+((Math.random()-.5)*28*k).toFixed(1)+'px,0) scale('+(1+.05*k).toFixed(3)+')';
+      else if(galaxy.style.transform)galaxy.style.transform='';
+      requestAnimationFrame(shake);
+    })();
+  }
+
+  // Autostart: der erste Klick/Tipp irgendwo auf der Seite startet die Musik
+  addEventListener('click',function first(){
+    removeEventListener('click',first);
+    if(!playing)play.click();
+  });
+
+  apply();
+})();
+
+// ---- Galaxie-Hintergrund, folgt dem Mauszeiger ----
+(function(){
+  var c=document.getElementById('galaxy'),ctx=c.getContext('2d');
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var W,H,dpr,stars=[],dust=[],m={x:0,y:0},tg={x:0,y:0},t=0;
+  var L=[{n:130,d:.015,s:.8},{n:80,d:.04,s:1.3},{n:40,d:.09,s:2}];
+  var tint=['255,255,255','190,210,255','255,200,240','170,240,255'];
+  var blobs=[{x:.25,y:.3,r:.55,c:'124,92,255',a:.22,f:.06},{x:.78,y:.65,r:.5,c:'255,107,214',a:.16,f:.09},{x:.5,y:.9,r:.6,c:'77,226,255',a:.12,f:.04}];
+  function rs(){
+    dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+    c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    tg.x=m.x=W/2;tg.y=m.y=H/2;stars=[];
+    L.forEach(function(l,i){for(var k=0;k<l.n;k++)stars.push({x:Math.random()*W,y:Math.random()*H,l:i,s:l.s*(.6+Math.random()*.8),p:Math.random()*6.28,sp:.5+Math.random()*1.5,c:tint[k%4]})});
+  }
+  function mv(e){
+    var p=e.touches?e.touches[0]:e;tg.x=p.clientX;tg.y=p.clientY;
+    if(!reduce&&Math.random()<.7)for(var i=0;i<2;i++){var a=Math.random()*6.28,v=.3+Math.random()*1.1;
+      dust.push({x:p.clientX,y:p.clientY,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,d:.012+Math.random()*.014,s:1+Math.random()*2.2,c:tint[i+1]})}
+    if(dust.length>200)dust.splice(0,dust.length-200);
+  }
+  function f(){
+    t+=.016;m.x+=(tg.x-m.x)*.07;m.y+=(tg.y-m.y)*.07;
+    var ox=m.x-W/2,oy=m.y-H/2;
+    ctx.globalCompositeOperation='source-over';ctx.fillStyle='#05030f';ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter';
+    blobs.forEach(function(b,i){
+      var x=b.x*W-ox*b.f*1.6+Math.sin(t*.2+i)*30,y=b.y*H-oy*b.f*1.6+Math.cos(t*.17+i)*30,r=b.r*Math.max(W,H);
+      var g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba('+b.c+','+b.a+')');g.addColorStop(1,'rgba('+b.c+',0)');
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    });
+    stars.forEach(function(s){
+      var d=L[s.l].d,x=((s.x-ox*d)%W+W)%W,y=((s.y-oy*d)%H+H)%H,tw=reduce?1:.65+.35*Math.sin(t*s.sp+s.p);
+      ctx.fillStyle='rgba('+s.c+','+(tw*(.45+s.l*.2))+')';ctx.beginPath();ctx.arc(x,y,s.s,0,6.283);ctx.fill();
+    });
+    var g=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,260);
+    g.addColorStop(0,'rgba(140,110,255,.28)');g.addColorStop(.4,'rgba(255,107,214,.10)');g.addColorStop(1,'rgba(77,226,255,0)');
+    ctx.fillStyle=g;ctx.fillRect(m.x-260,m.y-260,520,520);
+    for(var i=dust.length-1;i>=0;i--){var p=dust[i];p.x+=p.vx;p.y+=p.vy;p.vx*=.985;p.vy*=.985;p.life-=p.d;
+      if(p.life<=0){dust.splice(i,1);continue}
+      ctx.fillStyle='rgba('+p.c+','+(p.life*.9)+')';ctx.beginPath();ctx.arc(p.x,p.y,p.s*p.life,0,6.283);ctx.fill()}
+    requestAnimationFrame(f);
+  }
+  addEventListener('resize',rs);addEventListener('pointermove',mv,{passive:true});addEventListener('touchmove',mv,{passive:true});
+  rs();requestAnimationFrame(f);
+})();
+</script>
+</body>
+</html>
